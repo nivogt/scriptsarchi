@@ -1,0 +1,3 @@
+$(selection).each(function(element) {
+    element.setLabelExpression("${name}\n---------\n(${properties}");    
+});

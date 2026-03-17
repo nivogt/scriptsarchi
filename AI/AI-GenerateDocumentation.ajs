@@ -1,0 +1,99 @@
+/*
+ * Generate AI Documentation (Requires AI-Gemini.js and Export To Markdown.ajs)
+ * 
+ * Requires:
+ *   * jArchi - https://www.archimatetool.com/blog/2018/07/02/jarchi/
+ *   * AI-REST.js - Package to support connections to LLM (Gemini/GPT)
+ *   * persona.json - templates for standard persona and prompts - https://gist.github.com/smileham/8cbb3116db7f0ee80bcab4f1a57d14a8#file-persona-json
+ *   * Export to Markdown.ajs - https://gist.github.com/smileham/578bbbb88dc0ed5a1403f3b98711ec25
+ * 
+ * Version 1: Gemini API
+ * Version 1.1: Updated to use latest Markdown - remove TOC
+ * 
+ * (c) 2026 Steven Mileham
+ *
+*/
+
+console.show();
+console.clear();
+console.log("Generate AI Summary");
+
+const library = true;
+
+const strLimit = 3000;
+const md = require('./ExportToMarkDown.ajs');
+const ai = require('./AI-REST.js');
+
+function getPersona() {
+    try {
+        return require(__DIR__ + "persona.json");
+    }
+    catch (e) {
+        console.error("Persona file not found - check gists");
+        exit()
+    }
+}
+const personaFile = getPersona();
+const persona = personaFile.documentation.persona;
+const viewPromptTemplate = `${persona}. ${personaFile.documentation.viewPromptTemplate}`;
+const componentPromptTemplate = `${persona}. ${personaFile.documentation.componentPromptTemplate}`;
+
+const theComponents = $(selection);
+const theViews = theComponents.filter("archimate-diagram-model");
+
+function buttonDialog(message,options) {
+    if (message.length>strLimit) {
+        message = message.substring(0,strLimit) +"...";
+    }
+    var dialog = new org.eclipse.jface.dialogs.MessageDialog(shell,"Archi",null,message,3,options.concat(["Cancel"]),0);
+    
+    var result=dialog.open();
+    return result==options.length?null:(result+1).toString();
+}
+
+if (theViews && theViews.length>0) {
+    theViews.each(function(theView){
+
+        console.log(`Generating Summary for view:${theView}`);
+
+        theDocument = "";
+        let markdownContent = '<document>\n'+md(theView, true, false, false, true, true, false)+"\n</document>";
+
+        summary = summariseMarkdownToAI (markdownContent);
+        var updateDocumentation = buttonDialog(`View:${theView.name}\nNew Documentation:\n${summary}`, ["Replace Documentation", "Append Documentation"]);
+        if (updateDocumentation=="2") {
+            theView.documentation += `\n${summary}`;
+        } 
+        else if (updateDocumentation=="1") {
+            theView.documentation = summary;
+        }
+    });
+}
+else {
+    theComponents.forEach(theComponent => {
+    console.log(`Generating Summary for component:${theComponent.name}`);
+
+    summary = generateDocumentation (theComponent);
+
+    var updateDocumentation = buttonDialog(`Component:${theComponent.name}\nNew Documentation:\n${summary}`, ["Replace Documentation", "Append Documentation"]);
+    if (updateDocumentation=="2") {
+        theComponent.documentation += `\n${summary}`;
+    } 
+    else if (updateDocumentation=="1") {
+        theComponent.documentation = summary;
+    }
+});
+
+}
+
+function generateDocumentation (theComponent) {
+    let componentPrompt = `Component Name: \"${theComponent.name}\", Component Type: \"${theComponent.type}\"${(theComponent.specialization!=null?", Component Specialisation: \""+theComponent.specialization+"\"":"")}${(theComponent.documentation!=""&&theComponent.documentation!=null)?", Current Documentation: \""+theComponent.documentation+"\"":""}`
+    theComponent.prop().forEach(function (prop) {
+        componentPrompt+=` Property: "${prop}" = "${theComponent.prop(prop)}",`;
+    })
+    return ai(`${componentPromptTemplate}:\n ${componentPrompt}`);
+}
+
+function summariseMarkdownToAI (markdownContent) {
+   return ai(viewPromptTemplate+markdownContent)
+}

@@ -1,0 +1,102 @@
+/*
+ * Folder Management Examples
+ * 
+ * Create child folders and create and move elements in these folders
+ *
+ * (c) 2018 Jean-Baptiste Sarrodie, Phillip Beauvoir
+ * 
+ * This work is licensed under the HUMANS Licence described below.
+ * 
+ * The HUMANS (Help Us Make Archi Noteworthy & Sustainable) licence goal is to bring happiness
+ * to both Archi users and developers. This means that we would like users of
+ * jArchi to donate something and get this useful script as a gift in return (and feel great!).
+ *
+ * The only restrictions that apply are:
+ *  - You can't redistribute this script.
+ *  - You can't use this script for commercial purposes unless you obtained it from the official Archi distribution channels.
+ * 
+ */
+
+console.show();
+
+var modelName = "Dev - Resource Management - MDS"
+
+// Create a new model and set it as the current model
+$.model.create(modelName).setAsCurrent();
+console.log("Created model: " + model.name);
+
+// Find the "Business" folder using a selector
+var viewFolder = $("folder.Views").first();
+console.log("Found folder: " + viewFolder);
+
+/*
+* Move To Cloud
+*/
+
+var moveToCloudFolder = viewFolder.createFolder("Move To Cloud");
+console.log("Created folder: " + moveToCloudFolder);
+
+/* 
+* TOGAF 
+*
+*/
+
+var togafFolder = viewFolder.createFolder("TOGAF");
+console.log("Created folder: " + togafFolder);
+
+var togafDiagramsFolder = togafFolder.createFolder("Diagrams");
+console.log("Created folder: " + togafDiagramsFolder);
+
+var togafDiagramList = [
+ "Value Chain Diagram",
+ "Solution Concept Diagram",
+ "Business Footprint Diagram",
+ "Business Service/Information Diagram",
+ "Functional Decomposition Diagram",
+ "Product Lifecycle Diagram",
+ "Goal/Objective/Service Diagram",
+ "Business Use-Case Diagram",
+ "Organization Decomposition Diagram",
+ "Process Flow Diagram",
+ "Event Diagram",
+ "Conceptual Data Diagram",
+ "Logical Data Diagram",
+ "Data Dissemination Diagram",
+ "Data Security Diagram",
+ "Data Migration Diagram",
+ "Data Lifecycle Diagram",
+ "Application Communication Diagram",
+ "Application and User Location Diagram",
+ "Application Use-Case Diagram",
+ "Enterprise Manageability Diagram",
+ "Process/Application Realization Diagram",
+ "Software Engineering Diagram",
+ "Application Migration Diagram",
+ "Software Distribution Diagram",
+ "Environments and Locations Diagram",
+ "Environments and Locations Diagram",
+ "Processing Diagram",
+ "Networked Computing/Hardware Diagram",
+ "Communications Engineering Diagram",
+ "Project Context Diagram",
+ "Benefits Diagram"
+]
+
+for (var elementOfTogafDiagramList in togafDiagramList) {
+    var diagramView = model.createArchimateView(togafDiagramList[elementOfTogafDiagramList],togafDiagramsFolder);
+    console.log("Created view - ", togafDiagramList[elementOfTogafDiagramList]);
+}
+
+var togafDeliverablesFolder = togafFolder.createFolder("Deliverables");
+console.log("Created folder: " + togafDeliverablesFolder);
+
+/*
+* Import elements from ServiceNow
+*
+*/
+
+// Open in UI
+console.log("Opening model in tree...");
+model.openInUI();
+
+model.save("C:\\Users\\nicolasvogt\\OneDrive - KPMG\\Documents\\KB\\Models\\" + modelName.replace(/\s/g, '') + ".archimate")

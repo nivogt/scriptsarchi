@@ -1,0 +1,10 @@
+var protocol = window.prompt("Protocol?", "https");
+var port = window.prompt("Port?", "443");
+var format = window.prompt("Format?", "json");
+
+$(selection).each(function(element) {
+    element.prop("Protocol", protocol);
+    element.prop("Port", port);
+    element.prop("Format", format);
+    element.setLabelExpression("${name}(${property:Protocol}/${property:Port})\nFormat: ${property:Format}");    
+});

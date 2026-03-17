@@ -1,0 +1,19 @@
+/*
+ * Export Work package list to Markdown
+ * 
+ */
+
+
+const migrationLayer = {"label":"Implementation and Migration", "components":["work-package","deliverable","implementation-event","plateau","gap"]};
+
+if ($(selection).filter("archimate-diagram-model").size() == 1) {
+    // $(selection).filter("archimate-diagram-model") is a collection, so one has to apply '.first' to make it a element  
+    var view = $(selection).filter("archimate-diagram-model").first();
+    console.log('Existing selected view is : "', view.name, '"');       
+} else {
+    window.alert("No unique view is selected ! "+"\r"+"(Next step : Checking if the Test View already exist and select it, otherwise create it)"+"\r");
+}
+
+console.log("..... Listing $(view).find() ...."+"\r"+$(view).find()+"\r");
+console.log("..... Listing $(view).children() ...."+"\r"+$(view).children().not("relationship")+"\n");
+

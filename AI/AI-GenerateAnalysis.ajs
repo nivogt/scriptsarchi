@@ -1,0 +1,107 @@
+/*
+ * Generate AI Analysis (Requires AI-REST.js and Export To Markdown.ajs)
+ * 
+ * Requires:
+ *   * jArchi - https://www.archimatetool.com/blog/2018/07/02/jarchi/
+ *   * AI-REST.js - Package to support connections to LLM (Gemini/GPT)
+ *   * persona.json - templates for standard persona and prompts - https://gist.github.com/smileham/8cbb3116db7f0ee80bcab4f1a57d14a8#file-persona-json
+ *   * Export to Markdown.ajs - https://gist.github.com/smileham/578bbbb88dc0ed5a1403f3b98711ec25
+ * 
+ * Version 1: Gemini API
+ * Version 1.1: Updated to add Analysis to the view, support for "diagram" components
+ * Version 1.2: Updated to use latest Markdown - remove TOC
+ * Version 2: Moved Prompt detail to external "persona.json" file - please download template from the gist package
+ * 
+ * (c) 2026 Steven Mileham
+ *
+*/
+
+console.show();
+console.clear();
+console.log("Generate AI Summary");
+
+const library = true;
+
+function getPersona() {
+    try {
+        return require(__DIR__ + "persona.json");
+    }
+    catch (e) {
+        console.error("Persona file not found - check gists");
+        exit()
+    }
+}
+const personaFile = getPersona();
+
+const promptTemplate = `${personaFile.analysis.persona}. ${personaFile.analysis.promptTemplate}`;
+
+const strLimit = 3000;
+const md = require('./ExportToMarkDown.ajs');
+const ai = require('./AI-REST.js');
+
+const theComponents = $(selection);
+
+function buttonDialog(message,options) {
+    if (message.length>strLimit) {
+        message = message.substring(0,strLimit) +"...";
+    }
+    var dialog = new org.eclipse.jface.dialogs.MessageDialog(shell,"Archi",null,message,3,options.concat(["Cancel"]),0);
+    
+    var result=dialog.open();
+    return result==options.length?null:(result+1).toString();
+}
+
+const theView = theComponents.parents("archimate-diagram-model")[0]
+if (theView) {
+    console.log(theView);
+
+    let markdownContent = '<document>\n'+md(theView, true, false, false, true, true, false)+"\n</document>";
+
+    theComponents.forEach(theComponent => {
+        console.log(`Generating Summary for component:${theComponent.name}`);
+
+        summary = generateAnalysis (theComponent,markdownContent);
+
+        let updateDocumentation = buttonDialog(`Component:${theComponent.name}\nAnalysis:\n${summary}`, ["Replace Documentation", "Append to Documentation", "Create Assessment"]);
+        
+        if (updateDocumentation=="3") {
+            let theAnalysis = model.createElement("assessment", `Analysis for ${theComponent.name}`);
+            theAnalysis.documentation = summary;
+            if (!theComponent.type.contains("model")) {
+                let theRelationship = model.createRelationship("association-relationship", "", theComponent.concept, theAnalysis);
+                let theVisualAnalysis = theView.add(theAnalysis, 0,0,-1,-1);
+                let theVisualRelationship = theView.add(theRelationship, theComponent, theVisualAnalysis);
+            }
+            else
+            {
+                let theVisualAnalysis = theView.add(theAnalysis, 0,0, -1, -1);
+                theView.createConnection(theComponent,theVisualAnalysis);
+            }
+        }
+        else if (updateDocumentation=="2") {
+            theComponent.documentation += `\n${summary}`;
+        } 
+        else if (updateDocumentation=="1") {
+            theComponent.documentation = summary;
+        }
+    });
+}
+else {
+    console.log("Please select a component.");
+}
+
+
+function generateAnalysis (theComponent,theContext) {
+    let componentPrompt = "";
+    if (!theComponent.type.contains("model-note")) {
+        componentPrompt = `Component Name: \"${theComponent.name}\", UID:\"${theComponent.concept.id}\", Component Type: \"${theComponent.type}\"${(theComponent.specialization!=null?", Component Specialisation: \""+theComponent.specialization+"\"":"")}${(theComponent.documentation!=""&&theComponent.documentation!=null)?", Current Documentation: \""+theComponent.documentation+"\"":""}`
+        theComponent.prop().forEach(function (prop) {
+            componentPrompt+=` Property: "${prop}" = "${theComponent.prop(prop)}",`;
+        })
+    }
+    else {
+        componentPrompt = `"Note: "${theComponent.text}"`;
+    }
+    return ai(`${promptTemplate}, analyse ${componentPrompt} in the context of:\n ${theContext}`);
+    
+}
