@@ -1,3 +1,9 @@
+/*
+ * Create data object
+ * 
+ * Given a list of names, this script creates as many data-objects as item in the list
+ * 
+ */
 
 var listOfObjectToCreate = [
     "datapoint1",
