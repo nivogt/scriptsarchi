@@ -1,0 +1,23 @@
+// Resize objects in selected view
+//
+// Requires jArchi - https://www.archimatetool.com/blog/2018/07/02/jarchi/
+//
+// This script resizes visual objects in the selected view
+//
+// (c) 2020 Jean-Baptiste Sarrodie
+ 
+$(selection).not("relationship").each(function(element) {
+    resizeObject(element);
+});
+ 
+function resizeObject(obj) {
+  var bounds = obj.bounds;
+  
+  bounds.width = -1;
+  bounds.height = -1;
+
+  obj.bounds = bounds;
+ 
+  console.log(obj.name+" size has been set to default");
+
+}
