@@ -1,0 +1,18 @@
+
+var listOfObjectToCreate = [
+    "datapoint1",
+    "datapoint2"
+] 
+
+const theView = $(selection).filter("archimate-diagram-model").first();
+
+if (!theView) {
+    console.log("> Please Select a View");
+}
+
+for(var i = 0; i < listOfObjectToCreate.length; i++) {
+    var newobj = model.createElement("data-object", listOfObjectToCreate[i]);
+    var MyVisualObj = theView.add(newobj, 120, 240, -1, -1);
+    console.log("Created new element: ", newobj.name);
+} 
+
