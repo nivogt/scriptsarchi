@@ -1,0 +1,324 @@
+/****************************************
+ * Step by Step JArchi script examples  *
+ * v0.1                                 *
+ * Francois Coudeville                  *
+ * May 2021  #jArchi                           *
+ * #Beginner #Guide #Tutorial #Example  *
+ ****************************************/
+
+//---------
+// 1 Utils 
+//---------
+
+console.show(); 
+console.clear(); 
+console.log("..... Step by Step script examples beginning ...."+"\r");
+
+//--------------------
+// 2 Javascript basics 
+//--------------------
+
+console.log("..... Javascript basics ...."+"\r");
+
+// (Array of Objects)
+
+// First Object
+var Object1 = {
+    ElementName : "Blue",
+    Level : 1,
+    parentElement : "Red"
+};
+
+// Second Object
+var Object2 = {
+    ElementName : "Green",
+    Level : 2,
+    parentElement : "Blue"
+    };
+
+// Adding (pushing) the objects in the array
+var ElementList = [];
+ElementList.push(Object1);
+ElementList.push(Object2);
+
+// Displaying the element in the console by scrolling the array with a for... loop
+for (i=0;i<2;i++){
+    console.log("First element of Array Name : "+ElementList[i].ElementName);
+    console.log("First element of Array Level: "+ElementList[i].Level);
+    console.log("First element of Array Parent: "+ElementList[i].parentElement+"\r");
+}
+
+//-----------------------------------------------------
+// 3 Concept and its Properties in the model repository 
+//-----------------------------------------------------
+
+// Creating an application component in the model
+console.log("..... Creating an application component in the model ....");
+var AppName = "Test application component to be deleted";
+// Note : model is the global variable containing the current model selected
+var MyElement = model.createElement("application-component", AppName); // Creates an element of type application component and references it in My element variable
+
+// Creating a property in the application component 
+console.log("..... Creating a property in the application component ....");
+var AppDescription = "This is a test application generated from script for test purposes" ;
+var AppCode = "Code test 123" ;
+MyElement.documentation = AppDescription ; // Set the description (native element property) affecting the description
+MyElement.prop('Code', AppCode, true) ; // Creates a property with Code type and sets its value to AppCode 
+
+// Reading a property from the application component 
+console.log("..... Reading a property from the application component ...."+"\r");
+console.log("Application Component Name : "+MyElement.name);
+console.log("Application Component Code : \""+MyElement.prop('Code')+"\""+"\r");
+
+// Updating the property
+console.log("..... Updating a property from the application component ...."+"\r");
+MyElement.prop('Code', "Code test 456", false) ; // Updates the Code property with "Code test 456" value (true would mean updated object with property added (even if it existed))
+console.log("Application Component Code after update : \""+MyElement.prop('Code')+"\""+"\r");
+
+// Creating and removing a property 
+console.log("..... Deleting a property from the application component ...."+"\r");
+// Create property
+MyElement.prop('PropertyToBeRemoved', "Test to delete", true) ; // Updates the Code property with "Code test 456" value (true would mean updated object with property added (even if it existed))
+// Remove property
+MyElement.removeProp('PropertyToBeRemoved');
+
+//-----------------------
+// 4 Objects in the view 
+//-----------------------
+
+// Name of the View of the current selected visual object (Cannot do it if view not selected, so put in comment)
+//console.log("..... Name of the View of the current selected visual object : "+$(selection).first().view.name+"...."+"\r");
+
+// Parent of an object selected(Cannot do it if view not selected, so put in comment)
+//console.log(".....Parent of an object selected "+$(selection).parent().name+"\r");
+
+// Testing if a view is explicitly already selected or else select or create a "Test View"
+console.log("..... Testing if a view is selected ...."+"\r");
+// selection is a global variable representing the current element selected (can be a view, an objet, a relation...)
+// Checks that there is one unique "size()==1", view "archimate-diagram-model", from the list of objects selected '$(selection)' 
+if ($(selection).filter("archimate-diagram-model").size() == 1) {
+    // $(selection).filter("archimate-diagram-model") is a collection, so one has to apply '.first' to make it a element  
+    var view = $(selection).filter("archimate-diagram-model").first();
+    console.log('Existing selected view is : "', view.name, '"');       
+} else {
+window.alert("No unique view is selected ! "+"\r"+"(Next step : Checking if the Test View already exist and select it, otherwise create it)"+"\r");
+
+// Testing if there is an existing view with the name 'Test View' already in the model
+    if (($(".Test View").filter("archimate-diagram-model").first())) {
+        console.log("..... Selecting the existing Test View view ...."+"\r");
+        var view = $(".Test View").filter("archimate-diagram-model").first();        
+    } else {
+        // If not create the view with the name 'Test View'
+        console.log("..... Creating a new Test View view ....");
+        var view = model.createArchimateView("Test View");
+    }
+}
+// Displaying the name of the working view (to make sure) 
+console.log('..... Working on view "', view.name, '" .....');
+
+// Creating an application visual object of an existing concept in the view
+// Note only pure visual objects like note or visual groups can be created directly in the view with createObject function
+console.log("..... Creating an application visual object of an existing concept in the view ...."+"\r");
+var visualApp = view.add(MyElement, 20, 140, 140, 60);
+
+// Creating an other application concept and drop it as a visual object in the view
+console.log("..... Creating another application concept and then visual object of an existing concept in the view ...."+"\r");
+var MyOtherElement= model.createElement("application-component", "Test another application component to be deleted");
+var otherVisualApp = view.add(MyOtherElement, 220, 140, 140, 60);
+    
+// Creating a visual object in the view
+var vgroup = view.createObject("group", 20, 10, 300, 110, true);
+vgroup.name = "Visual Group Test Name";
+// Create elements into the visual object
+var landingzonex = 10 ;
+var landingzoney = 40 ;
+vgroup.add(MyElement, landingzonex, landingzoney, -1, -1);  
+
+// window.alert("Alert Test Message ! (After creating the visual objects)");
+
+//---------------------------------
+// 5 Relationship in Model and View
+//---------------------------------
+
+//-----------------------------------------------------------
+// Listing the descendants with find() and listing children()
+// In a hierarchy, seems that find searches the objects on many sub-levels whereas children stop at the level immediatly below
+console.log("..... Listing $(view).find() ...."+"\r"+$(view).find()+"\r");
+console.log("..... Listing $(view).children() ...."+"\r"+$(view).children()+"\r");
+
+// -----------------------------------------------------------
+// Create a relationship in the model between two applications
+console.log("..... Creating a relationship between two concepts (an application components) ...."+"\r");
+var relationship = model.createRelationship("triggering-relationship", "triggers", MyElement, MyOtherElement);
+relationship.name = "Test relationship to delete";
+
+//-------------------------------------------------------------------------
+// Creating a visual relationship between two visual object of the concepts
+console.log("..... Creating a visual relationship between two visual object of the concepts ...."+"\r");
+
+// Navigating from concept to object in a view and the other way round 
+// is not obvious when you do not know the tricks 
+// It is essential to use collections and their functions even when managing a singleton object/element
+
+    //-------------------------------------------------------------
+    // Get the visual object reference in the view from the concept
+
+    // 1 First method : Secured logic with ids
+    console.log(".....Using a function to get the references of the visual object of MyElement in Test View : "+"\n"
+    +$(".Test View").children().filter(function (visualObject){
+        if(visualObject.concept){
+            return visualObject.concept.id==MyElement.id
+        }
+    })
+    +"\r");
+
+    // 2 Second method : Alternative based on name (assuming the name is unique)
+    console.log(".....Quicker method to get the references of the visual object of MyElement in Test View : ");
+    console.log($(".Test View").children("."+MyElement.name)+"\r");
+
+// Creating the visual connection in the view
+var connection = view.add(relationship, visualApp, otherVisualApp);
+console.log("..... The visual relationship has just been created ! ....."+"\r");
+
+// -----------------------------------------------------------------------------------------------------
+// Creating a grouping and a serving relation between an app and this biz function for later example use
+var MyGrouping = model.createElement("grouping", "My Business Line (Grouping example) to delete");
+var MyServes1Relationship = model.createRelationship("serving-relationship", "Serves 2 relationship example to delete", MyElement, MyGrouping);
+
+// Creating a concept of type business function 
+// and creating in the model a serving relation between an app and this biz function (for later eample purpose)
+var MyBusinessFunction = model.createElement("business-function", "My Business Function example generated by script to delete");
+var MyServes2Relationship = model.createRelationship("serving-relationship", "Serves 1 relationship example to delete", MyElement, MyBusinessFunction);
+var MyVisualBF = view.add(MyBusinessFunction, 120, 240, 100, 60);
+var MyVisualRL2 =view.add(MyServes2Relationship, visualApp, MyVisualBF);
+
+//--------------------------------------------
+// 6 Browse and navigate objects and relations 
+//--------------------------------------------
+
+//-------------------------------------------
+// From the object in a view, get the concept  
+console.log("..... From the object in a view, get the concept ....");
+console.log("From the object (in a view) : "+visualApp.name+"\r"+"get the concept : "+visualApp.concept.name+"\r");
+
+//--------------------------------------------------
+// From the concept retrieve the object(s) in a view 
+
+// See above Chatper 5 'Relationship in Model and View'
+
+//-------------
+// List unicity
+var a = "Value a";
+var b = "Value b";
+var c = "Value c";
+var d = "Value d"; 
+var applicationComponentList = [a, b, b, c, d, d, a, d]
+console.log("applicationComponentList before removing u-plicates : "+applicationComponentList+"\r");
+// Filter the ApplicationComponents array to remove the duples and tuples when more than 2 were found 
+applicationComponentList = applicationComponentList.filter(function(elem, index, self) {
+    return index === self.indexOf(elem);
+})
+console.log("applicationComponentList after removing u-plicates : "+applicationComponentList+"\r");
+
+
+//----------------------------------------------------------------------------------------------------
+// From all the grouping element of the model, scrolling all the serving relations where it is target
+// (relation type serving pointing to a grouping element) and list all the sources and targets
+
+console.log("..... List all the sources and targets of the relations type serving of the model, pointing to a grouping element ....");
+$("grouping").inRels("serving-relationship").each(function(rel) {
+    ListGroupAndElements(rel);
+});
+
+function ListGroupAndElements(rel) {
+    console.log(rel.target.name+"          "+rel.source.name);  
+}
+console.log('\n');  
+
+//-------------------------------------------------------------------------------------------------------------------
+// Scrolling the relations between two elements (relation type serving sourcing from an application of the selection)
+// TODO create and delete by script above the function and relationship
+console.log("..... Scrolling all the relations of type serving of the Test View, between an application and a business function....");
+$(".Test View").children().filter("application-component").outRels("serving-relationship").each(function(rel) {
+// Following is the alternative to list all the applications from the model (rather than the view)
+//$("application-component").outRels("serving-relationship").each(function(rel) {
+
+    ListAppsAndBizFunction(rel);
+});
+
+function ListAppsAndBizFunction(rel) {
+    if (rel.target.type=="business-function") {
+        console.log(rel.source.name+"          "+rel.target.name);  
+        // More sophisticated can be to store in an array and sort it by source and then display it
+    }
+}
+console.log('\n');  
+
+// -------------------------------------------------------------------------------------
+// Listing all the elements linked to the grouping (business line) by a serving relation
+console.log(".....Listing all the elements linked to the grouping (business line) by a serving relation....");
+console.log("InRels : "+$("grouping").filter(".My Business Line (Grouping example) to delete").inRels('serving-relationship')+"\r");
+
+// -----------------------------------------------------------------------
+// Finds the first grouping linked through a serving relation to MyElement 
+console.log(".....Finds the first grouping (business line) linked through a serving relation to MyElement ....");
+console.log("Navigation : "+$(MyElement).rels("serving-relationship").ends("grouping").filter(".My Business Line (Grouping example) to delete").first().name+"\r");
+
+// -------------------------------------------------------------------------------------------
+// List the relationship on a selected object on a view (usefull to show hidden relationships)
+// console.log("View OutRels of the selected visual object "+$(selection).outRels('serving-relationship')+"\r");
+// console.log("View the grouping object at the end of the OutRels of the selected visual object "+$(selection).outRels('serving-relationship').ends("grouping").first().name+"\r");
+
+// Testing if two concepts (a visual group and an application) are linked by a relationship
+// TODO Not working properly : to debug
+console.log(".....Testing if two concepts (a visual group and an application) are linked by a relationship....");
+console.log("MyElement outRels : "+$(MyElement).outRels("serving-relationship"));
+console.log("Grouping .My Busines Line.... .inRels : "+$("grouping").filter(".My Business Line (Grouping example) to delete").inRels());
+var IsRelationExisting = $("grouping").filter(".My Business Line (Grouping example) to delete").inRels().is($(MyElement).outRels("serving-relationship"));
+var IsRelationExisting = $(MyElement).outRels("serving-relationship").is($("grouping").filter(".My Business Line (Grouping example) to delete").inRels());
+var IsRelationExisting = $(MyElement).outRels("serving-relationship").is($("grouping").filter(".My Business Line (Grouping example) to delete").inRels());
+console.log("IsRelationExisting : "+IsRelationExisting+"\r");
+
+// TODO interresting stuff on List Applications with ITPMConsumingOpCo is CLP.ajs
+
+//--------------------------------------------------
+// 7 Delete all objects and relations Browse objects 
+//--------------------------------------------------
+
+// TODO check real deletion of everything
+
+console.log("..... Deleting elements and view ....");
+
+// Removing the object representation from the view
+
+window.alert("Alert Test Message ! (Gives the opportunity to see what is on the diagram if (Test View) was opened)");
+
+// Deleting the object from the view
+//VisualApp.delete();
+//OtherVisualApp.delete();
+//vGroup.delete();
+//MyVisualBF.delete();
+//MyVisualRL2.delete();
+
+// Deleting the element from the model
+MyElement.delete();
+MyOtherElement.delete();
+
+// Deleting the group
+vgroup.delete();
+
+// Delete relationship
+relationship.delete();
+
+// Delete Business function and serves relationship
+MyBusinessFunction.delete();
+MyServes1Relationship.delete();
+
+// Delete Grouping and serves relationship
+MyGrouping.delete();
+MyServes2Relationship.delete();
+
+// Deleting the view
+//view.delete();
+
+console.log("..... End of script ....");
