@@ -1,10 +1,14 @@
-// Resize objects in selected view
-//
-// Requires jArchi - https://www.archimatetool.com/blog/2018/07/02/jarchi/
-//
-// This script resizes visual objects in the selected view
-//
-// (c) 2020 Jean-Baptiste Sarrodie
+/*
+ * Reset visual object size to default
+ *
+ *
+ * This script reset selected elements to the default size
+ *
+ *
+ * Requires: jArchi - https://www.archimatetool.com/blog/2018/07/02/jarchi/
+ * Author: Nicolas Vogt
+ */
+ 
  
 $(selection).not("relationship").each(function(element) {
     resizeObject(element);
