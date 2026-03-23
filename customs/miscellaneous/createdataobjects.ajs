@@ -6,8 +6,17 @@
  */
 
 var listOfObjectToCreate = [
-    "datapoint1",
-    "datapoint2"
+    "GlobalEngagementID",	
+    "DatabaseName",	
+    "EngName",	
+    "CloseOutDate",	
+    "ClosedOutBy",	
+    "DisplayName",	
+    "CloseOutFileName",	
+    "CloseOutItemID",	
+    "OpinionID",	
+    "RfgsRequestID",	
+    "Opinion/Interim"
 ] 
 
 const theView = $(selection).filter("archimate-diagram-model").first();
