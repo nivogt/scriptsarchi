@@ -1,19 +1,215 @@
 /*
- * Export Work package list to Markdown
- * 
+ * Get Work Package Elements from a selected ArchiMate diagram
+ * with predecessor/successor relationships and EPIC (Plateau) association.
+ * Handles AND/OR junctions in triggering chains.
+ *
+ * Requires jArchi - https://www.archimatetool.com/blog/2018/07/02/jarchi/
  */
 
+console.show();
+console.clear();
+console.log("=== Work Package List ===\n");
 
-const migrationLayer = {"label":"Implementation and Migration", "components":["work-package","deliverable","implementation-event","plateau","gap"]};
-
-if ($(selection).filter("archimate-diagram-model").size() == 1) {
-    // $(selection).filter("archimate-diagram-model") is a collection, so one has to apply '.first' to make it a element  
-    var view = $(selection).filter("archimate-diagram-model").first();
-    console.log('Existing selected view is : "', view.name, '"');       
-} else {
-    window.alert("No unique view is selected ! "+"\r"+"(Next step : Checking if the Test View already exist and select it, otherwise create it)"+"\r");
+// Ensure exactly one view is selected
+if ($(selection).filter("archimate-diagram-model").size() !== 1) {
+    window.alert("Please select exactly one ArchiMate diagram view and run the script again.");
+    exit();
 }
 
-console.log("..... Listing $(view).find() ...."+"\r"+$(view).find()+"\r");
-console.log("..... Listing $(view).children() ...."+"\r"+$(view).children().not("relationship")+"\n");
+var view = $(selection).filter("archimate-diagram-model").first();
+console.log('View: "' + view.name + '"\n');
+
+// Find all work-package elements within the view (including nested)
+var workPackages = $(view).find("work-package");
+
+if (workPackages.size() === 0) {
+    console.log("No Work Package elements found in this view.");
+    exit();
+}
+
+console.log("Found " + workPackages.size() + " Work Package element(s):\n");
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/** Returns true if the element is an AND or OR junction. */
+function isJunction(el) {
+    return el.type === "junction" || el.type === "or-junction" || el.type === "and-junction";
+}
+
+/** Returns "AND" or "OR" label for a junction element. */
+function junctionLabel(el) {
+    if (el.type === "or-junction") return "OR";
+    if (el.junction === "or")      return "OR";   // fallback property check
+    return "AND";
+}
+
+/**
+ * Resolve successor work-items reachable via outgoing triggering relationships,
+ * passing transparently through AND/OR junctions.
+ * Returns an array of { name, via } where `via` is "AND"/"OR" if reached
+ * through a junction, or null for direct relationships.
+ */
+function resolveSuccessors(el, visited) {
+    visited = visited || {};
+    if (visited[el.id]) return [];
+    visited[el.id] = true;
+
+    var results = [];
+    $(el).rels().filter("flow-relationship").each(function(rel) {
+        if (rel.source.id !== el.id) return;
+        var tgt = rel.target;
+        if (isJunction(tgt)) {
+            var label = junctionLabel(tgt);
+            resolveSuccessors(tgt, visited).forEach(function(item) {
+                results.push({ id: item.id, via: label });
+            });
+        } else {
+            results.push({ id: tgt.id || "(no-id)", via: null });
+        }
+    });
+    return results;
+}
+
+/**
+ * Resolve predecessor work-items that lead to `el` via incoming triggering
+ * relationships, passing transparently through AND/OR junctions.
+ * Returns an array of { name, via }.
+ */
+function resolvePredecessors(el, visited) {
+    visited = visited || {};
+    if (visited[el.id]) return [];
+    visited[el.id] = true;
+
+    var results = [];
+    $(el).rels().filter("flow-relationship").each(function(rel) {
+        if (rel.target.id !== el.id) return;
+        var src = rel.source;
+        if (isJunction(src)) {
+            var label = junctionLabel(src);
+            resolvePredecessors(src, visited).forEach(function(item) {
+                results.push({ id: item.id, via: label });
+            });
+        } else {
+            results.push({ id: src.id || "(no-id)", via: null });
+        }
+    });
+    return results;
+}
+
+/**
+ * Format a list of { id, via } items as a readable string.
+ * Direct items are listed as plain IDs.
+ * Items reached through a junction are grouped: AND(id-1, id-2) or OR(id-1, id-2).
+ */
+function formatRelList(items) {
+    if (!items || items.length === 0) return "-";
+
+    var direct = [];
+    var groups = {};  // keyed by "AND" or "OR"
+
+    items.forEach(function(item) {
+        if (!item.via) {
+            direct.push(item.id);
+        } else {
+            if (!groups[item.via]) groups[item.via] = [];
+            groups[item.via].push(item.id);
+        }
+    });
+
+    var parts = direct.slice();  // start with direct IDs
+
+    Object.keys(groups).forEach(function(jType) {
+        if (groups[jType].length === 1) {
+            parts.push(groups[jType][0]);
+        } else {
+            parts.push(jType + "(" + groups[jType].join(", ") + ")");
+        }
+    });
+
+    return parts.join(", ");
+}
+
+/**
+ * Get the Plateau associated with a work package via a
+ * realization-relationship where the plateau is the target.
+ */
+function getEpic(el) {
+    var epic = null;
+    $(el).rels().filter("realization-relationship").each(function(rel) {
+        if (rel.source.id === el.id && rel.target.type === "plateau") {
+            epic = rel.target.name || "(unnamed plateau)";
+        }
+    });
+    return epic;
+}
+
+// ── Collect all data in one pass ──────────────────────────────────────────────
+
+var wpData     = [];
+var plateauMap = {};  // plateau name -> true (deduplicated)
+
+workPackages.each(function(wp) {
+    var concept = wp.concept || wp;
+    var id      = concept.id || "(no-id)";
+    var name    = concept.name || "(unnamed)";
+    var doc     = (concept.documentation || "").replace(/\r?\n/g, " ").trim();
+    var epic    = getEpic(concept);
+    var preds   = resolvePredecessors(concept);
+    var succs   = resolveSuccessors(concept);
+
+    wpData.push({ id: id, name: name, doc: doc, epic: epic, preds: preds, succs: succs });
+    if (epic) plateauMap[epic] = true;
+});
+
+// ── Markdown table ────────────────────────────────────────────────────────────
+
+console.log("| ID | Name | Plateau | Predecessors | Successors | Documentation |");
+console.log("|----|------|---------|--------------|------------|---------------|");
+
+wpData.forEach(function(wp) {
+    console.log("| " + wp.id +
+                " | " + wp.name +
+                " | " + (wp.epic || "-") +
+                " | " + formatRelList(wp.preds) +
+                " | " + formatRelList(wp.succs) +
+                " | " + wp.doc + " |");
+});
+
+// ── JSON export for create-workitems-from-archi.sh ────────────────────────────
+
+var outputPath = window.prompt(
+    "Path to write the JSON file for the ADO creation script:",
+    "/tmp/archi-workpackages.json"
+);
+
+if (outputPath) {
+    var plateaus = Object.keys(plateauMap);
+
+    // Flatten predecessor/successor lists to plain ID arrays for ADO linking
+    var jsonWPs = wpData.map(function(wp) {
+        return {
+            id:           wp.id,
+            name:         wp.name,
+            doc:          wp.doc,
+            epic:         wp.epic || null,
+            predecessors: wp.preds.map(function(p) { return p.id; }),
+            successors:   wp.succs.map(function(s) { return s.id; })
+        };
+    });
+
+    var payload = {
+        view:         view.name,
+        plateaus:     plateaus,
+        workPackages: jsonWPs
+    };
+
+    var FileWriter  = Java.type("java.io.FileWriter");
+    var fw = new FileWriter(outputPath);
+    fw.write(JSON.stringify(payload, null, 2));
+    fw.close();
+
+    console.log("\nJSON written to: " + outputPath);
+}
+
+console.log("\nDone.");
 

@@ -1,0 +1,105 @@
+/*
+ * Change Relationship Type
+ *
+ * Transforms all selected relationships from one ArchiMate relationship type
+ * to another (e.g. flow-relationship → triggering-relationship).
+ *
+ * Requires jArchi - https://www.archimatetool.com/blog/2018/07/02/jarchi/
+ */
+
+console.show();
+console.clear();
+console.log("=== Change Relationship Type ===\n");
+
+// ── Available relationship types ───────────────────────────────────────────────
+const RELATIONSHIP_TYPES = [
+    "access-relationship",
+    "aggregation-relationship",
+    "assignment-relationship",
+    "association-relationship",
+    "composition-relationship",
+    "flow-relationship",
+    "influence-relationship",
+    "realization-relationship",
+    "serving-relationship",
+    "specialization-relationship",
+    "triggering-relationship"
+];
+
+// ── Collect selected relationships ────────────────────────────────────────────
+var selectedRels = $(selection).filter("relationship");
+
+if (selectedRels.size() === 0) {
+    window.alert("No relationships selected.\nPlease select one or more relationships and run the script again.");
+    exit();
+}
+
+console.log("Selected " + selectedRels.size() + " relationship(s).\n");
+
+// ── Ask user for source and target types ──────────────────────────────────────
+var fromType = window.prompt(
+    "Enter the SOURCE relationship type to convert FROM\n(leave blank to convert ALL selected regardless of type):\n\n" +
+    RELATIONSHIP_TYPES.join("\n"),
+    "flow-relationship"
+);
+
+if (fromType === null) {
+    console.log("Cancelled.");
+    exit();
+}
+fromType = fromType.trim().toLowerCase();
+
+var toType = window.prompt(
+    "Enter the TARGET relationship type to convert TO:\n\n" +
+    RELATIONSHIP_TYPES.join("\n"),
+    "triggering-relationship"
+);
+
+if (toType === null) {
+    console.log("Cancelled.");
+    exit();
+}
+toType = toType.trim().toLowerCase();
+
+if (!RELATIONSHIP_TYPES.includes(toType)) {
+    window.alert("Unknown target type: \"" + toType + "\"\nScript aborted.");
+    exit();
+}
+
+if (fromType && !RELATIONSHIP_TYPES.includes(fromType)) {
+    window.alert("Unknown source type: \"" + fromType + "\"\nScript aborted.");
+    exit();
+}
+
+// ── Apply transformation ──────────────────────────────────────────────────────
+var converted = 0;
+var skipped   = 0;
+var errors    = 0;
+
+selectedRels.each(function(rel) {
+    var concept = rel.concept || rel;
+
+    // Skip if a source filter is set and type does not match
+    if (fromType && concept.type !== fromType) {
+        skipped++;
+        return;
+    }
+
+    try {
+        var oldType = concept.type;
+        concept.type = toType;
+        console.log("  ✓ [" + oldType + "] " + (concept.name || "(unnamed)") +
+                    " → [" + toType + "]");
+        converted++;
+    } catch (e) {
+        console.log("  ✗ Could not convert \"" + (concept.name || "(unnamed)") +
+                    "\": " + e.message);
+        errors++;
+    }
+});
+
+// ── Summary ───────────────────────────────────────────────────────────────────
+console.log("\nDone.");
+console.log("  Converted : " + converted);
+if (skipped > 0)  console.log("  Skipped   : " + skipped + " (type did not match '" + fromType + "')");
+if (errors  > 0)  console.log("  Errors    : " + errors  + " (relationship rules violated)");
