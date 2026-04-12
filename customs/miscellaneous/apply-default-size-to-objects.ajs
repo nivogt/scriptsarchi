@@ -1,9 +1,7 @@
 /*
  * Reset visual object size to default
  *
- *
  * This script reset selected elements to the default size
- *
  *
  * Requires: jArchi - https://www.archimatetool.com/blog/2018/07/02/jarchi/
  * Author: Nicolas Vogt

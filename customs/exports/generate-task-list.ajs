@@ -43,12 +43,6 @@ function junctionLabel(el) {
     return "AND";
 }
 
-/**
- * Resolve successor work-items reachable via outgoing triggering relationships,
- * passing transparently through AND/OR junctions.
- * Returns an array of { name, via } where `via` is "AND"/"OR" if reached
- * through a junction, or null for direct relationships.
- */
 function resolveSuccessors(el, visited) {
     visited = visited || {};
     if (visited[el.id]) return [];
@@ -70,11 +64,6 @@ function resolveSuccessors(el, visited) {
     return results;
 }
 
-/**
- * Resolve predecessor work-items that lead to `el` via incoming triggering
- * relationships, passing transparently through AND/OR junctions.
- * Returns an array of { name, via }.
- */
 function resolvePredecessors(el, visited) {
     visited = visited || {};
     if (visited[el.id]) return [];
@@ -96,11 +85,6 @@ function resolvePredecessors(el, visited) {
     return results;
 }
 
-/**
- * Format a list of { id, via } items as a readable string.
- * Direct items are listed as plain IDs.
- * Items reached through a junction are grouped: AND(id-1, id-2) or OR(id-1, id-2).
- */
 function formatRelList(items) {
     if (!items || items.length === 0) return "-";
 
@@ -129,10 +113,6 @@ function formatRelList(items) {
     return parts.join(", ");
 }
 
-/**
- * Get the Plateau associated with a work package via a
- * realization-relationship where the plateau is the target.
- */
 function getEpic(el) {
     var epic = null;
     $(el).rels().filter("realization-relationship").each(function(rel) {
@@ -143,10 +123,8 @@ function getEpic(el) {
     return epic;
 }
 
-// ── Collect all data in one pass ──────────────────────────────────────────────
-
 var wpData     = [];
-var plateauMap = {};  // plateau name -> true (deduplicated)
+var plateauMap = {};
 
 workPackages.each(function(wp) {
     var concept = wp.concept || wp;
@@ -161,8 +139,6 @@ workPackages.each(function(wp) {
     if (epic) plateauMap[epic] = true;
 });
 
-// ── Markdown table ────────────────────────────────────────────────────────────
-
 console.log("| ID | Name | Plateau | Predecessors | Successors | Documentation |");
 console.log("|----|------|---------|--------------|------------|---------------|");
 
@@ -175,8 +151,6 @@ wpData.forEach(function(wp) {
                 " | " + wp.doc + " |");
 });
 
-// ── JSON export for create-workitems-from-archi.sh ────────────────────────────
-
 var outputPath = window.prompt(
     "Path to write the JSON file for the ADO creation script:",
     "/tmp/archi-workpackages.json"
@@ -185,7 +159,6 @@ var outputPath = window.prompt(
 if (outputPath) {
     var plateaus = Object.keys(plateauMap);
 
-    // Flatten predecessor/successor lists to plain ID arrays for ADO linking
     var jsonWPs = wpData.map(function(wp) {
         return {
             id:           wp.id,
@@ -212,4 +185,3 @@ if (outputPath) {
 }
 
 console.log("\nDone.");
-

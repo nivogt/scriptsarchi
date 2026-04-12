@@ -19,11 +19,11 @@ console.log("Information flows between applications");
 var relationships=$("flow-relationship");
 
 relationships.each(function(relationship){
-	if(relationship.source.type == "application-component" &&
+    if(relationship.source.type == "application-component" &&
            relationship.target.type == "application-component") {
-		console.log("Source: " + relationship.source.name);
-		console.log("Target: " + relationship.target.name);
-		console.log("Transferred information: " + relationship.name);
-		console.log("Used integration platform: " + relationship.prop("IntegrationPlatform"));
-	}
+        console.log("Source: " + relationship.source.name);
+        console.log("Target: " + relationship.target.name);
+        console.log("Transferred information: " + relationship.name);
+        console.log("Used integration platform: " + relationship.prop("IntegrationPlatform"));
+    }
 });

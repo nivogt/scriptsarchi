@@ -1,0 +1,73 @@
+/*
+ * Add Network Info
+ * Prompts for protocol, port, TLS version (dropdown), and optional format in one dialog, then sets properties and updates label expressions on selected elements.
+ * Requires jArchi - https://www.archimatetool.com/blog/2018/07/02/jarchi/
+ */
+
+var JOptionPane = Java.type("javax.swing.JOptionPane");
+var JPanel = Java.type("javax.swing.JPanel");
+var JLabel = Java.type("javax.swing.JLabel");
+var JTextField = Java.type("javax.swing.JTextField");
+var JComboBox = Java.type("javax.swing.JComboBox");
+var GridLayout = Java.type("java.awt.GridLayout");
+
+var tlsOptions = ["TLS 1.0", "TLS 1.1", "TLS 1.2", "TLS > 1.2"];
+
+var panel = new JPanel(new GridLayout(0, 2, 8, 8));
+var protocolField = new JTextField("https", 16);
+var portField = new JTextField("443", 16);
+var tlsCombo = new JComboBox(tlsOptions);
+tlsCombo.setSelectedItem("TLS 1.2");
+var formatField = new JTextField("", 16);
+
+panel.add(new JLabel("Protocol:"));
+panel.add(protocolField);
+panel.add(new JLabel("Port:"));
+panel.add(portField);
+panel.add(new JLabel("TLS Version:"));
+panel.add(tlsCombo);
+panel.add(new JLabel("Format (optional):"));
+panel.add(formatField);
+
+var result = JOptionPane.showConfirmDialog(
+    null,
+    panel,
+    "Network Information",
+    JOptionPane.OK_CANCEL_OPTION,
+    JOptionPane.QUESTION_MESSAGE
+);
+
+if (result !== JOptionPane.OK_OPTION) {
+    exit();
+}
+
+var protocol = String(protocolField.getText());
+var port = String(portField.getText());
+var tlsVersion = String(tlsCombo.getSelectedItem());
+var format = String(formatField.getText());
+
+$(selection).each(function(element) {
+    element.prop("Protocol", protocol);
+    element.prop("Port", port);
+    element.prop("TLS Version", tlsVersion);
+
+    var hasFormat = format !== null && format.trim() !== "";
+    if (hasFormat) {
+        element.prop("Format", format);
+    }
+
+    if (tlsVersion != "none")    {
+        if (hasFormat) {
+            element.setLabelExpression("${name}(${property:Protocol}/${property:Port} - ${property:TLS Version})\nFormat: ${property:Format}");
+        } else {
+            element.setLabelExpression("${name}(${property:Protocol}/${property:Port} - ${property:TLS Version})");
+        }
+    } else {
+        if (hasFormat) {
+            element.setLabelExpression("${name}(${property:Protocol}/${property:Port})\nFormat: ${property:Format}");
+        } else {
+            element.setLabelExpression("${name}(${property:Protocol}/${property:Port})");
+        }
+    }
+    
+});
