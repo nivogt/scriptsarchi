@@ -1,0 +1,23 @@
+/*
+ * Folder Management Examples
+ * 
+ * Create child folders and create and move elements in these folders
+ *
+ * (c) 2018 Jean-Baptiste Sarrodie, Phillip Beauvoir
+ * 
+ * This work is licensed under the HUMANS Licence described below.
+ * 
+ * The HUMANS (Help Us Make Archi Noteworthy & Sustainable) licence goal is to bring happiness
+ * to both Archi users and developers. This means that we would like users of
+ * jArchi to donate something and get this useful script as a gift in return (and feel great!).
+ *
+ * The only restrictions that apply are:
+ *  - You can't redistribute this script.
+ *  - You can't use this script for commercial purposes unless you obtained it from the official Archi distribution channels.
+ * 
+ */
+
+// DEPRECATED: renamed to kebab-case filename
+// Use: model/create-model-reverse-booking-identifier.ajs
+window.alert("This script has been renamed to: model/create-model-reverse-booking-identifier.ajs\nPlease run the renamed script from the Scripts menu.");
+exit();

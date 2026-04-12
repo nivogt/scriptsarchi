@@ -1,0 +1,4 @@
+// DEPRECATED: renamed to kebab-case filename
+// Use: miscellaneous/create-note-with-label.ajs
+window.alert("This script has been renamed to: miscellaneous/create-note-with-label.ajs\nPlease run the renamed script from the Scripts menu.");
+exit();
