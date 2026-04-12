@@ -1,4 +1,0 @@
-// DEPRECATED: renamed to kebab-case filename
-// Use: model/delete-unused-elements-and-relationships.ajs
-window.alert("This script has been renamed to: model/delete-unused-elements-and-relationships.ajs\nPlease run the renamed script from the Scripts menu.");
-exit();

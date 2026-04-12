@@ -1,4 +1,0 @@
-// DEPRECATED: renamed to kebab-case filename
-// Use: miscellaneous/add-network-info.ajs
-window.alert("This script has been renamed to: miscellaneous/add-network-info.ajs\nPlease run the renamed script from the Scripts menu.");
-exit();
