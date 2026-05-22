@@ -1,6 +1,19 @@
-# AGENTS.md — AI Agent Instructions for jArchi Script Development
+# AGENTS.md — jArchi Script Development Guide for AI Agents
 
-This file provides instructions for AI coding agents (GitHub Copilot, Claude, etc.) working on `.ajs` scripts in this repository. Read this before generating or editing any jArchi script.
+This file provides instructions and full API reference for AI coding agents (GitHub Copilot, Claude, etc.) working on `.ajs` scripts in this repository. Read this before generating or editing any jArchi script.
+
+---
+
+## Repository structure
+
+```
+customs/
+  ai/             # AI-assisted generation scripts
+  exports/        # Scripts that extract/export data from a model
+  miscellaneous/  # Utility and transformation scripts
+  model/          # Scripts that create or modify model elements
+examples/         # Reference scripts shipped with jArchi
+```
 
 ---
 
@@ -9,7 +22,16 @@ This file provides instructions for AI coding agents (GitHub Copilot, Claude, et
 - All scripts are JavaScript (`.ajs`) executed by the **jArchi plugin** inside **Archi**.
 - Scripts run in a sandboxed Rhino/Nashorn JS engine — **no Node.js APIs**, no `require()`, no ES modules.
 - The entry point is always `$(selection)` or `$(model)` — there is no `main()` function.
-- Refer to [DEVELOPMENT_GUIDE.md](./DEVELOPMENT_GUIDE.md) for the full API reference.
+
+---
+
+## Prerequisites
+
+| Tool | Notes |
+|---|---|
+| [Archi](https://www.archimatetool.com/) | Open-source ArchiMate modelling tool |
+| [jArchi plugin](https://www.archimatetool.com/blog/2018/07/02/jarchi/) | Adds scripting support to Archi; install via `Help → Manage Plug-ins` |
+| VS Code | Works well for authoring `.ajs` files with the JavaScript extension |
 
 ---
 
@@ -18,7 +40,7 @@ This file provides instructions for AI coding agents (GitHub Copilot, Claude, et
 | Allowed | Not allowed |
 |---|---|
 | ES5 + limited ES6 (`const`, `let`, arrow functions, template literals) | `import` / `export` / `require()` |
-| `var`, `const`, `let` | Node.js built-ins (`fs`, `path`, `process`, …) |
+| `var`, `const`, `let` | Node.js built-ins (`fs`, `path`, `process`, ...) |
 | `Array.forEach`, `Array.map`, `Array.filter`, `Object.keys` | `async` / `await` / Promises |
 | `JSON.stringify` / `JSON.parse` | Browser DOM APIs |
 | `Java.type(...)` for Archi/Eclipse Java interop | ES2017+ features (optional chaining `?.`, nullish coalescing `??`, etc.) |
@@ -41,7 +63,8 @@ This file provides instructions for AI coding agents (GitHub Copilot, Claude, et
 - Always start with `console.show(); console.clear();` so the output panel is open and clean.
 - Always validate the selection before any logic and call `exit()` with a `window.alert()` if preconditions are not met.
 - Use `exit()` to stop execution — never `return` at the top level.
-- Organise code with `// ── Section title ───` banners to separate logical blocks.
+- Organise code with `// -- Section title ---` banners to separate logical blocks.
+- Gather all user inputs (via `window.prompt`) before any model processing.
 
 ---
 
@@ -49,10 +72,144 @@ This file provides instructions for AI coding agents (GitHub Copilot, Claude, et
 
 | Script type | Folder |
 |---|---|
+| AI-assisted generation | `customs/ai/` |
 | Extract / export data from model | `customs/exports/` |
 | Transform or repair model elements | `customs/miscellaneous/` |
 | Create or generate model elements | `customs/model/` |
-| AI-assisted generation | `customs/ai/` |
+
+---
+
+## Running scripts
+
+1. Open Archi and load your model.
+2. Select the target view or elements in the diagram.
+3. Go to **Scripts** (menu or panel) → navigate to your `.ajs` file → double-click or press **Run**.
+4. Output appears in the **Console** panel (`Window → Console` if not visible).
+
+---
+
+## The jArchi object model
+
+### Selection and views
+
+```javascript
+// Get the currently selected elements
+$(selection)
+
+// Filter to only archimate diagram views
+$(selection).filter("archimate-diagram-model")
+
+// Always call .first() to get a single element from a collection
+var view = $(selection).filter("archimate-diagram-model").first();
+```
+
+### Querying elements
+
+```javascript
+// Find all elements of a type anywhere in the view (recursive)
+$(view).find("work-package")
+
+// Get direct children only (non-recursive)
+$(view).children()
+
+// Exclude relationships
+$(view).children().not("relationship")
+
+// Iterate over a collection
+$(view).find("work-package").each(function(el) {
+    console.log(el.name);
+});
+```
+
+### Element properties
+
+| Property | Description |
+|---|---|
+| `el.id` | Unique ArchiMate element identifier |
+| `el.name` | Display name |
+| `el.type` | ArchiMate type string (e.g. `"work-package"`, `"plateau"`) |
+| `el.documentation` | Free-text documentation field |
+| `el.concept` | The underlying model concept (use when iterating view objects) |
+| `el.prop("key")` | Read a custom property |
+| `el.prop()` | Returns array of all custom property keys |
+
+> **Tip:** When iterating view elements (returned by `$(view).find()`), always resolve the underlying concept with `var concept = el.concept || el` before accessing `id`, `type`, or relationships.
+
+---
+
+## Working with relationships
+
+```javascript
+// Get all relationships connected to an element
+$(el).rels()
+
+// Filter by relationship type
+$(el).rels().filter("triggering-relationship")
+$(el).rels().filter("flow-relationship")
+$(el).rels().filter("realization-relationship")
+$(el).rels().filter("composition-relationship")
+
+// Check direction
+rel.source.id === el.id   // true if el is the source (outgoing)
+rel.target.id === el.id   // true if el is the target (incoming)
+```
+
+### Common relationship types
+
+| Type string | ArchiMate relationship |
+|---|---|
+| `triggering-relationship` | Triggering |
+| `flow-relationship` | Flow |
+| `realization-relationship` | Realization |
+| `composition-relationship` | Composition |
+| `aggregation-relationship` | Aggregation |
+| `association-relationship` | Association |
+| `assignment-relationship` | Assignment |
+| `serving-relationship` | Serving |
+| `influence-relationship` | Influence |
+| `specialization-relationship` | Specialization |
+| `access-relationship` | Access |
+
+---
+
+## Handling AND / OR junctions
+
+Junctions are transparent routing elements in ArchiMate. When traversing triggering or flow chains, check for them explicitly and recurse through them. Always pass a `visited` map to prevent infinite loops on cyclic diagrams:
+
+```javascript
+function isJunction(el) {
+    return el.type === "junction" ||
+           el.type === "or-junction" ||
+           el.type === "and-junction";
+}
+
+function junctionLabel(el) {
+    if (el.type === "or-junction") return "OR";
+    if (el.junction === "or")      return "OR";  // fallback for some Archi versions
+    return "AND";
+}
+
+function resolveSuccessors(el, visited) {
+    visited = visited || {};
+    if (visited[el.id]) return [];
+    visited[el.id] = true;
+    // ... traverse outgoing relationships
+}
+```
+
+---
+
+## Changing element or relationship types
+
+Always wrap type changes in a `try/catch` — ArchiMate metamodel rules may forbid certain combinations:
+
+```javascript
+try {
+    rel.concept.type = "triggering-relationship";
+} catch (e) {
+    console.log("Cannot convert: " + e.message);
+}
+```
 
 ---
 
@@ -88,27 +245,6 @@ $(el).rels().filter("triggering-relationship").each(function(rel) {
 });
 ```
 
-### Handle AND/OR junctions when traversing chains
-Any triggering or flow chain may pass through a `junction`, `and-junction`, or `or-junction` element. Always recurse through junctions transparently and pass a `visited` map to prevent infinite loops:
-```javascript
-function resolveSuccessors(el, visited) {
-    visited = visited || {};
-    if (visited[el.id]) return [];
-    visited[el.id] = true;
-    // ...
-}
-```
-
-### Wrap type mutations in try/catch
-ArchiMate metamodel rules can forbid certain type conversions. Never assume a mutation will succeed:
-```javascript
-try {
-    concept.type = "triggering-relationship";
-} catch (e) {
-    console.log("Cannot convert: " + e.message);
-}
-```
-
 ---
 
 ## Output formatting
@@ -122,9 +258,18 @@ try {
   ```
 - Print a summary line at the end: `console.log("\nDone.");`
 - For multi-item list columns (e.g. predecessors), use this grouping format:
-  - Single item → plain ID: `id-abc123`
-  - Multiple items via AND junction → `AND(id-abc, id-def)`
-  - Multiple items via OR junction → `OR(id-abc, id-def)`
+  - Single item -> plain ID: `id-abc123`
+  - Multiple items via AND junction -> `AND(id-abc, id-def)`
+  - Multiple items via OR junction -> `OR(id-abc, id-def)`
+
+---
+
+## Debugging tips
+
+- `console.log($(el))` prints the jArchi collection object — useful for inspecting what was returned.
+- `console.log(el.type)` is the fastest way to verify which ArchiMate type an element is.
+- `console.log(JSON.stringify(Object.keys(el)))` lists all available properties on a jArchi proxy object.
+- Use `$(model).find()` instead of `$(view).find()` to search the entire model regardless of which view is selected.
 
 ---
 
@@ -153,7 +298,14 @@ try {
 
 | Pattern | File |
 |---|---|
-| Export elements to Markdown table | `customs/exports/generate_task_list.ajs` |
-| Traverse predecessor/successor chain with junction handling | `customs/exports/generate_task_list.ajs` |
-| Transform relationship types with user prompt | `customs/miscellaneous/change_relationship_type.ajs` |
-| Rich multi-view Markdown export | `customs/exports/ExportToMarkdown.ajs` |
+| Export elements to Markdown table | `customs/exports/ExportToMarkdown.ajs` |
+| Transform relationship types with user prompt | `customs/miscellaneous/` |
+| AI-assisted documentation generation | `customs/ai/AI-GenerateDocumentation.ajs` |
+
+---
+
+## Reference links
+
+- [jArchi documentation](https://github.com/archimatetool/archi-scripting-plugin/wiki)
+- [ArchiMate 3.2 specification](https://pubs.opengroup.org/architecture/archimate3-doc/)
+- [Archi user guide](https://www.archimatetool.com/downloads/Archi%20User%20Guide.pdf)
