@@ -460,8 +460,9 @@ function generateComponentTable(layer, view) {
 
 
 function saveMarkdownToFile(view, markdownContent,embed) {
-    const defaultFileName = view.name ? `${model.name}-${view.name}.md` : "Exported View.md";
-    const exportFile = window.promptSaveFile({ title: "Export to Markdown", filterExtensions: ["*.md"], fileName: defaultFileName });
+    const defaultFileName = sanitizeFileName(view.name ? `${model.name}-${view.name}.md` : "Exported View.md");
+    const exportFileInput = window.promptSaveFile({ title: "Export to Markdown", filterExtensions: ["*.md"], fileName: defaultFileName });
+    const exportFile = normalizeOutputFilePath(exportFileInput);
 
     if(exportFile) {
         if (!embed) {
@@ -481,8 +482,9 @@ function saveMarkdownToFile(view, markdownContent,embed) {
 }
 
 function saveIndexToFile(markdownContent) {
-    const defaultFileName = `${model.name}.md`;
-    const exportFile = window.promptSaveFile({ title: "Export to Markdown", filterExtensions: ["*.md"], fileName: defaultFileName });
+    const defaultFileName = sanitizeFileName(`${model.name}.md`);
+    const exportFileInput = window.promptSaveFile({ title: "Export to Markdown", filterExtensions: ["*.md"], fileName: defaultFileName });
+    const exportFile = normalizeOutputFilePath(exportFileInput);
 
     if(exportFile) {
         $.fs.writeFile(exportFile, markdownContent);
@@ -492,6 +494,22 @@ function saveIndexToFile(markdownContent) {
     else {
         console.log("> Export cancelled");
     }
+}
+
+function sanitizeFileName(fileName) {
+    return fileName.replaceAll(" ", "");
+}
+
+function normalizeOutputFilePath(filePath) {
+    if (!filePath) {
+        return filePath;
+    }
+
+    const splitIndex = Math.max(filePath.lastIndexOf("\\"), filePath.lastIndexOf("/"));
+    const folderPath = splitIndex >= 0 ? filePath.substring(0, splitIndex + 1) : "";
+    const fileName = splitIndex >= 0 ? filePath.substring(splitIndex + 1) : filePath;
+
+    return `${folderPath}${sanitizeFileName(fileName)}`;
 }
 try {
     if (typeof library===undefined || !library) {
