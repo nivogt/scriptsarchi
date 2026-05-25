@@ -10,6 +10,7 @@ var JLabel = Java.type("javax.swing.JLabel");
 var JTextField = Java.type("javax.swing.JTextField");
 var JComboBox = Java.type("javax.swing.JComboBox");
 var GridLayout = Java.type("java.awt.GridLayout");
+var KeyboardFocusManager = Java.type("javax.swing.KeyboardFocusManager");
 
 var tlsOptions = ["TLS 1.0", "TLS 1.1", "TLS 1.2", "TLS > 1.2"];
 
@@ -29,8 +30,12 @@ panel.add(tlsCombo);
 panel.add(new JLabel("Format (optional):"));
 panel.add(formatField);
 
+// Get the focused window to maintain focus when dialog closes
+var focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
+var parentWindow = focusOwner != null ? focusOwner.getTopLevelAncestor() : null;
+
 var result = JOptionPane.showConfirmDialog(
-    null,
+    parentWindow,
     panel,
     "Network Information",
     JOptionPane.OK_CANCEL_OPTION,
