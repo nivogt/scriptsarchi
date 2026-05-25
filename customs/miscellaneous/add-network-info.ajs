@@ -59,7 +59,6 @@ try {
     }
 }
 
-
 var result = JOptionPane.showConfirmDialog(
     parentWindow,
     panel,
