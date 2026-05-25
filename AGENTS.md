@@ -247,6 +247,67 @@ $(el).rels().filter("triggering-relationship").each(function(rel) {
 
 ---
 
+## Creating dialogs with proper focus handling
+
+When creating dialog boxes in jArchi scripts, **always retain focus on the Archi window** after the dialog closes. Use this pattern for all dialogs:
+
+```javascript
+var JOptionPane = Java.type("javax.swing.JOptionPane");
+var JPanel = Java.type("javax.swing.JPanel");
+var JLabel = Java.type("javax.swing.JLabel");
+var JTextField = Java.type("javax.swing.JTextField");
+var GridLayout = Java.type("java.awt.GridLayout");
+
+var panel = new JPanel(new GridLayout(0, 2, 8, 8));
+panel.add(new JLabel("Input:"));
+panel.add(new JTextField("default value", 20));
+
+// CRITICAL: Get parent window to maintain focus when dialog closes
+var parentWindow = null;
+try {
+    var KeyboardFocusManager = Java.type("javax.swing.KeyboardFocusManager");
+    var focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
+    parentWindow = focusOwner != null ? focusOwner.getTopLevelAncestor() : null;
+} catch (e) {
+    // If KeyboardFocusManager is restricted, try Frame.getFrames()
+    try {
+        var Frame = Java.type("java.awt.Frame");
+        var frames = Frame.getFrames();
+        if (frames && frames.length > 0) {
+            parentWindow = frames[0];
+        }
+    } catch (e2) {
+        // Fall back to null if all methods fail
+        parentWindow = null;
+    }
+}
+
+var result = JOptionPane.showConfirmDialog(
+    parentWindow,  // Always pass the parent window, not null
+    panel,
+    "Dialog Title",
+    JOptionPane.OK_CANCEL_OPTION,
+    JOptionPane.QUESTION_MESSAGE
+);
+
+if (result !== JOptionPane.OK_OPTION) {
+    exit();
+}
+```
+
+**Why this matters:**
+- Passing `null` as the parent creates an unmanaged window, losing focus on Archi after closing
+- `KeyboardFocusManager` provides the best focus resolution but may be restricted in sandboxes
+- `Frame.getFrames()` is a fallback for restrictive Rhino/Nashorn environments
+- The try-catch ensures graceful degradation if both methods fail
+
+**Common dialog types:**
+- `JOptionPane.showConfirmDialog()` — OK/Cancel buttons
+- `JOptionPane.showInputDialog()` — Single text input
+- `JOptionPane.showOptionDialog()` — Custom buttons and complex layouts
+
+---
+
 ## Output formatting
 
 - Always output a Markdown table for structured data.
