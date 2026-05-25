@@ -10,7 +10,6 @@ var JLabel = Java.type("javax.swing.JLabel");
 var JTextField = Java.type("javax.swing.JTextField");
 var JComboBox = Java.type("javax.swing.JComboBox");
 var GridLayout = Java.type("java.awt.GridLayout");
-var KeyboardFocusManager = Java.type("javax.swing.KeyboardFocusManager");
 
 var tlsOptions = ["TLS 1.0", "TLS 1.1", "TLS 1.2", "TLS > 1.2"];
 
@@ -30,9 +29,25 @@ panel.add(tlsCombo);
 panel.add(new JLabel("Format (optional):"));
 panel.add(formatField);
 
-// Get the focused window to maintain focus when dialog closes
-var focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
-var parentWindow = focusOwner != null ? focusOwner.getTopLevelAncestor() : null;
+// Try to get the parent window; fall back to null if restricted
+var parentWindow = null;
+try {
+    var KeyboardFocusManager = Java.type("javax.swing.KeyboardFocusManager");
+    var focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
+    parentWindow = focusOwner != null ? focusOwner.getTopLevelAncestor() : null;
+} catch (e) {
+    // If KeyboardFocusManager is restricted, try to get frame from Frame.getFrames()
+    try {
+        var Frame = Java.type("java.awt.Frame");
+        var frames = Frame.getFrames();
+        if (frames && frames.length > 0) {
+            parentWindow = frames[0];
+        }
+    } catch (e2) {
+        // Fall back to null if all else fails
+        parentWindow = null;
+    }
+}
 
 var result = JOptionPane.showConfirmDialog(
     parentWindow,
