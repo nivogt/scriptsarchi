@@ -237,6 +237,25 @@ if ($(selection).filter("archimate-diagram-model").size() !== 1) { ... }
 $(el).rels().filter("triggering-relationship").each(function(rel) { ... });
 ```
 
+### Filter callback return types
+
+When using `.filter()` with jArchi view or proxy objects, ensure the callback returns a plain JavaScript boolean. Returning a Java/Archi proxy (for example `o.view`) can cause the Rhino/Nashorn engine to attempt a lossy primitive coercion and throw a `ClassCastException`.
+
+Examples:
+
+```javascript
+// Avoid — may return a Java proxy object and trigger a ClassCastException
+$(selection).filter("relationship").filter(function(o) { return o.view; })
+
+// Preferred — returns a plain boolean (safe across Archi/jArchi versions)
+$(selection).filter("relationship").filter(function(o) { return o.view != null; })
+
+// Alternative explicit check
+$(selection).filter("relationship").filter(function(o) { return typeof o.view !== 'undefined'; })
+```
+
+Use these patterns whenever a filter callback inspects properties that may be proxied Java objects.
+
 ### Check direction explicitly inside `.rels()` callbacks
 ```javascript
 $(el).rels().filter("triggering-relationship").each(function(rel) {
