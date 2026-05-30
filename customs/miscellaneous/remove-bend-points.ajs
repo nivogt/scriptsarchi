@@ -14,7 +14,7 @@ if (!$(selection) || $(selection).size() === 0) {
     exit();
 }
 
-$(selection).filter("relationship").filter(function(o) { return o.view; }).each(function(o) {
+$(selection).filter("relationship").filter(function(o) { return o.view != null; }).each(function(o) {
     var view = o.view;
     var rel = o.concept;
     var source = o.source;
