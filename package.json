@@ -1,0 +1,14 @@
+{
+  "name": "scriptsarchi",
+  "version": "0.1.0",
+  "description": "jArchi script repository with unit tests for add-network-info logic.",
+  "private": true,
+  "scripts": {
+    "test": "jest",
+    "lint": "eslint . --ext .js,.ajs"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0"
+  }
+}
