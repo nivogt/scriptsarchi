@@ -29,7 +29,7 @@ panel.add(tlsCombo);
 panel.add(new JLabel("Format (optional):"));
 panel.add(formatField);
 
-// Try to get the parent window; fall back to null if restricted
+// Try to get the parent window; handles multi-monitor setups by finding the visible Archi window
 var parentWindow = null;
 try {
     var KeyboardFocusManager = Java.type("javax.swing.KeyboardFocusManager");
@@ -41,7 +41,17 @@ try {
         var Frame = Java.type("java.awt.Frame");
         var frames = Frame.getFrames();
         if (frames && frames.length > 0) {
-            parentWindow = frames[0];
+            // Prefer the first visible frame to ensure it's the active Archi window
+            for (var i = 0; i < frames.length; i++) {
+                if (frames[i].isVisible()) {
+                    parentWindow = frames[i];
+                    break;
+                }
+            }
+            // Fall back to first frame if none visible
+            if (!parentWindow && frames.length > 0) {
+                parentWindow = frames[0];
+            }
         }
     } catch (e2) {
         // Fall back to null if all else fails

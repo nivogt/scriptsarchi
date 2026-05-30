@@ -249,7 +249,7 @@ $(el).rels().filter("triggering-relationship").each(function(rel) {
 
 ## Creating dialogs with proper focus handling
 
-When creating dialog boxes in jArchi scripts, **always retain focus on the Archi window** after the dialog closes. Use this pattern for all dialogs:
+When creating dialog boxes in jArchi scripts, **always retain focus on the Archi window** after the dialog closes, and **ensure dialogs appear on the correct monitor in multi-monitor setups**. Use this pattern for all dialogs:
 
 ```javascript
 var JOptionPane = Java.type("javax.swing.JOptionPane");
@@ -262,7 +262,7 @@ var panel = new JPanel(new GridLayout(0, 2, 8, 8));
 panel.add(new JLabel("Input:"));
 panel.add(new JTextField("default value", 20));
 
-// CRITICAL: Get parent window to maintain focus when dialog closes
+// CRITICAL: Get parent window to maintain focus and multi-monitor support
 var parentWindow = null;
 try {
     var KeyboardFocusManager = Java.type("javax.swing.KeyboardFocusManager");
@@ -274,7 +274,17 @@ try {
         var Frame = Java.type("java.awt.Frame");
         var frames = Frame.getFrames();
         if (frames && frames.length > 0) {
-            parentWindow = frames[0];
+            // Prefer the first visible frame to ensure it's the active Archi window
+            for (var i = 0; i < frames.length; i++) {
+                if (frames[i].isVisible()) {
+                    parentWindow = frames[i];
+                    break;
+                }
+            }
+            // Fall back to first frame if none visible
+            if (!parentWindow && frames.length > 0) {
+                parentWindow = frames[0];
+            }
         }
     } catch (e2) {
         // Fall back to null if all methods fail
@@ -298,6 +308,7 @@ if (result !== JOptionPane.OK_OPTION) {
 **Why this matters:**
 - Passing `null` as the parent creates an unmanaged window, losing focus on Archi after closing
 - `KeyboardFocusManager` provides the best focus resolution but may be restricted in sandboxes
+- **For multi-monitor setups:** The frame iteration logic prioritizes visible frames, ensuring dialogs appear on the same monitor as the Archi window (fixes issue #4)
 - `Frame.getFrames()` is a fallback for restrictive Rhino/Nashorn environments
 - The try-catch ensures graceful degradation if both methods fail
 
