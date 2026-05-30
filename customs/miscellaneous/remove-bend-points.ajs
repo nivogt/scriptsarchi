@@ -6,11 +6,46 @@
 //
 // (c) 2018 Jean-Baptiste Sarrodie
 
-$(selection).filter("relationship").filter(function(o) {return o.view}).each(function(o) {
+console.show(); console.clear();
+
+// Validate selection
+if (!$(selection) || $(selection).size() === 0) {
+    window.alert('Please select one or more relationship view objects first.');
+    exit();
+}
+
+$(selection).filter("relationship").filter(function(o) { return o.view; }).each(function(o) {
     var view = o.view;
     var rel = o.concept;
     var source = o.source;
     var target = o.target;
-    o.delete();
-    view.add(rel, source, target);
-})
+
+    try {
+        // Try common property names for bendpoints (case variations)
+        if (typeof o.bendpoints !== 'undefined') {
+            o.bendpoints = [];
+            console.log('Cleared bendpoints for: ' + (rel.name || rel.id));
+            return;
+        }
+        if (typeof o.bendPoints !== 'undefined') {
+            o.bendPoints = [];
+            console.log('Cleared bendPoints for: ' + (rel.name || rel.id));
+            return;
+        }
+
+        // Some Archi versions expose setter methods
+        if (typeof o.setBendpoints === 'function') {
+            o.setBendpoints([]);
+            console.log('Cleared bendpoints (setter) for: ' + (rel.name || rel.id));
+            return;
+        }
+
+        // Fallback: recreate the view object for the relationship (preserves the model concept)
+        o.delete();
+        view.add(rel, source, target);
+        console.log('Recreated view for relationship: ' + (rel.name || rel.id));
+    }
+    catch (e) {
+        console.log('Failed to clear bendpoints for relationship ' + (rel.name || rel.id) + ': ' + e);
+    }
+});
