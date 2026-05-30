@@ -4,7 +4,7 @@
     "node": true
   },
   "parserOptions": {
-    "ecmaVersion": 5
+    "ecmaVersion": 2021
   },
   "rules": {
     "no-unused-vars": "warn",
@@ -14,7 +14,16 @@
     {
       "files": ["*.ajs"],
       "parserOptions": {
-        "ecmaVersion": 5
+        "ecmaVersion": 2021
+      },
+      "rules": {
+        "no-unused-vars": "off"
+      }
+    },
+    {
+      "files": ["examples/**/*.js"],
+      "rules": {
+        "no-unused-vars": "off"
       }
     }
   ]
