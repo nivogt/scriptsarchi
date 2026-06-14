@@ -99,5 +99,9 @@ $(selection).each(function(element) {
             element.setLabelExpression("${name}(${property:Protocol}/${property:Port})");
         }
     }
-    
+
+    // Place relationship labels closer to the target end when a connection is selected
+    if (element.type === "relationship") {
+        element.textPosition = CONNECTION_TEXT_POSITION.TARGET;
+    }
 });
