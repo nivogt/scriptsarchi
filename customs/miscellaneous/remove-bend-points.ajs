@@ -40,9 +40,19 @@ $(selection).filter("relationship").filter(function(o) { return o.view != null; 
             return;
         }
 
-        // Fallback: recreate the view object for the relationship (preserves the model concept)
+        // Fallback: recreate the view object for the relationship (preserves the model concept and labels)
+        // Save label and documentation before deletion
+        var savedLabel = o.label || null;
+        var savedDocumentation = rel.documentation || null;
+        
         o.delete();
-        view.add(rel, source, target);
+        var newViewObject = view.add(rel, source, target);
+        
+        // Restore label if it existed
+        if (savedLabel != null && typeof newViewObject.label !== 'undefined') {
+            newViewObject.label = savedLabel;
+        }
+        
         console.log('Recreated view for relationship: ' + (rel.name || rel.id));
     }
     catch (e) {
